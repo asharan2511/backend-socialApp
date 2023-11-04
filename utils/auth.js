@@ -4,6 +4,7 @@ import User from "../models/user.js";
 export const isAuthenticated = async (req, res, next) => {
   try {
     const token = req.cookies.token;
+
     if (token) {
       const decode = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById({ _id: decode.user.id });
@@ -21,6 +22,6 @@ export const isAuthenticated = async (req, res, next) => {
         .send({ success: false, message: "Authentication Failed" });
     }
   } catch (error) {
-    res.status(400).send({ success: false, message: "Auth Failed from catch" });
+    res.status(400).send({ success: false, message: "PLease Login" });
   }
 };

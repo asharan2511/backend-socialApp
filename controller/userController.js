@@ -42,28 +42,32 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      res
+      return res
         .status(200)
         .send({ success: false, message: "User is not Registered" });
     }
     const comparePassword = await bcrypt.compare(password, user.password);
     if (!comparePassword) {
-      res.status(200).send({ success: false, message: "Wrong Credentials" });
+      return res
+        .status(200)
+        .send({ success: false, message: "Wrong Credentials" });
     }
     const token = jwt.sign(
       { user: { email, password, id: user._id } },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.cookie("token", token, {
-      expires: new Date(Date.now() + 90 * 60 * 1000),
-      httpOnly: true,
-    });
     res
+      .cookie("token", token, {
+        expires: new Date(Date.now() + 90 * 60 * 1000),
+        httpOnly: true,
+      })
       .status(200)
       .send({ success: true, message: "User logged in successfully" });
   } catch (error) {
-    res.status(400).send({ success: false, message: "Authentication Failed!" });
+    return res
+      .status(400)
+      .send({ success: false, message: "Authentication Failed!" });
   }
 };
 
@@ -100,5 +104,39 @@ export const followUser = async (req, res) => {
     }
   } catch (error) {
     return res.status(400).send({ success: false, message: error.message });
+  }
+};
+
+export const logoutUser = async (req, res) => {
+  try {
+    return res
+      .status(200)
+      .cookie("token", null, {
+        expiresIn: new Date(Date.now()),
+        httpOnly: true,
+      })
+      .send({ success: true, message: "Logged out" });
+  } catch (error) {
+    return res.status(500).send({ success: false, message: error.message });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const { oldPassword, newPassword } = req.body;
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .send({ success: false, message: "Old password is wrong" });
+    }
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return res
+      .status(200)
+      .send({ success: true, message: "Password is changed successfully" });
+  } catch (error) {
+    return res.status(500).send({ success: false, message: error.message });
   }
 };

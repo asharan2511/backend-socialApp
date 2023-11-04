@@ -73,3 +73,15 @@ export const deletePost = async (req, res) => {
     return res.status(400).send({ success: false, message: error.message });
   }
 };
+
+export const getPostOfFollwing = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const posts = await Post.find({
+      owner: { $in: user.following },
+    });
+    res.status(200).send({ success: true, message: "post retrieved", posts });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+};
